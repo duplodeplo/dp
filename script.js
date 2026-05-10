@@ -81,7 +81,7 @@
     }
   })();
 
-  var cookieKey = "cookie-consent-demo";
+  var cookieKey = "cookie-consent-v1";
   try {
     if (cookieBar && !localStorage.getItem(cookieKey)) {
       requestAnimationFrame(function () {
@@ -123,7 +123,10 @@
       if (!bookingConsent.checked) {
         return;
       }
-      window.open(dikidiUrl, "_blank", "noopener,noreferrer");
+      var win = window.open(dikidiUrl, "_blank", "noopener,noreferrer");
+      if (!win) {
+        window.location.href = dikidiUrl;
+      }
     });
   }
 
@@ -256,6 +259,7 @@
       var id = btn.getAttribute("data-open-dialog");
       var dlg = id ? document.getElementById(id) : null;
       if (dlg && typeof dlg.showModal === "function") {
+        dlg._opener = btn;
         dlg.showModal();
       }
     });
@@ -267,6 +271,12 @@
       if (dlg && typeof dlg.close === "function") {
         dlg.close();
       }
+    });
+  });
+
+  document.querySelectorAll("dialog").forEach(function (dlg) {
+    dlg.addEventListener("close", function () {
+      if (dlg._opener) { dlg._opener.focus(); dlg._opener = null; }
     });
   });
 
@@ -466,10 +476,13 @@
     var heroBg = document.querySelector(".hero__bg");
     var headerEl = document.querySelector(".header");
     var scrollTicking = false;
+    var lastScrollY = -1;
 
     function updateScrollEffects() {
       scrollTicking = false;
       var y = window.scrollY || document.documentElement.scrollTop;
+      if (y === lastScrollY) { scrollTicking = false; return; }
+      lastScrollY = y;
       var doc = document.documentElement;
       var maxScroll = Math.max(1, doc.scrollHeight - window.innerHeight);
       var ratio = Math.min(1, Math.max(0, y / maxScroll));
